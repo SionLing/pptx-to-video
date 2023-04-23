@@ -1,6 +1,7 @@
 # pptx-to-video
 
 Convert a pptx file to a video.
+
 ***** Only for english input. But you can change some code for other input language ******
 
 The audios are made from note of slides.
@@ -20,5 +21,7 @@ Usage:
 # translate srt
 
 Usage :
-    python cmd-trans-srt.py source_file.srt output_directory, default input language is english, and the target languages is "zh,es,en,pt,ru,ja,de,ko,fr,tr,vi,th,id". You can use -tl to specify the target languages. The "auto" detection is no supported.
+    python cmd-trans-srt.py source_file.srt output_directory
+    
+    By default input language is english, and the target languages is "zh,es,en,pt,ru,ja,de,ko,fr,tr,vi,th,id". You can use -tl to specify the target languages. The "auto" detection is no supported.
 
