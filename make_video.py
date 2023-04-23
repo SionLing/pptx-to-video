@@ -3,6 +3,8 @@ from gtts import gTTS
 from playsound import playsound
 from moviepy.editor import *
 from pydub import AudioSegment
+import process_text
+import make_srt
 
 CONFIG = {
     'fps': 24,
@@ -39,24 +41,45 @@ def make_video(index, image, audio):
     clip = ImageClip(image).set_duration(audioclip.duration)
     videoclip = clip.set_audio(audioclip)
     videoclip.write_videofile(out_file, fps=CONFIG['fps'])
-    return out_file
+    return out_file, audioclip.duration
 
 # Jion all videos into one using moviepy
 def join_videos(videos, output_file):
     clips = [VideoFileClip(v) for v in videos]
     final_clip = concatenate_videoclips(clips)
+    # final_clip.write_videofile(output_file, fps=CONFIG['fps'])
     final_clip.write_videofile(output_file, fps=CONFIG['fps'], audio_codec='aac')
     pass
+
+# Split text into sentences
+def split_text(notes):
+    new_notes = []
+    for note in notes:
+        sentences = process_text.text_to_sentences(note['text'])
+        if len(sentences) == 0:
+            new_notes.append({'text':'', 'image':note['image']})
+        else:
+            for i,sentence in enumerate(sentences):
+                new_notes.append({'text':sentence, 'image':note['image']})
+    return new_notes
 
 # make audio and video for each slide
 def make_all(pptx_file, output_file=CONFIG['output_file']):
     notes = decode_ppt.export_pptx(pptx_file, CONFIG['image_dir'])
+    # Split text into sentences
+    notes = split_text(notes)
     videos = []
-    for note in notes:
-        audio_file = make_audio(note['index'], note['text'])
-        video_file = make_video(note['index'], note['image'], audio_file)
+    for i,note in enumerate(notes):
+        audio_file = make_audio(i, note['text'])
+        note["audio"] = audio_file
+        video_file,duration = make_video(i, note['image'], note["audio"])
+        note['duration'] = duration
         videos.append(video_file)
+    # join clips into one video
     join_videos(videos, output_file)
+    # make srt file
+    srt_filename =os.path.splitext(output_file)[0] + '.srt'
+    make_srt.make_srt(notes, srt_filename)
     pass
 
 # Clean up all files
@@ -78,8 +101,14 @@ def create_dir():
     os.makedirs(CONFIG['image_dir'], exist_ok=True)
     pass
 
-# Test
-if __name__ == '__main__':
+# Create video from pptx file
+def pptx_to_video(pptx_file, output_file):
     clean_up()
     create_dir()
-    make_all('prices.pptx', "out.mp4")
+    make_all(pptx_file, output_file)
+
+# Test code
+if __name__ == '__main__':
+    pptx_file = 'test.pptx'
+    output_file = 'final.mp4'
+    pptx_to_video(pptx_file, output_file)
